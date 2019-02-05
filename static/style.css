@@ -8,6 +8,7 @@ html, body {
   font-family: sans-serif;
   color: #dad070;
   margin: 0;
+  padding: 0;
 }
 
 .container {
@@ -16,6 +17,12 @@ html, body {
 
 .mouvement{
 	width: 50%;
+}
+
+.CodeZone{
+    width: 100%;
+    height: 80px;
+    background-color: red;
 }
 
 /*============ CONNECT =============*/

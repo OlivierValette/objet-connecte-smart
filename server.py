@@ -105,30 +105,43 @@ def event_loop(sensors):
         sensors["L"].read_light()
         # Envoi de la temperature sur socket
         socketio.emit('lumen', sensors["L"].light, Broadcast=True)
-        time.sleep(1)
         # Lecture du détecteur de mouvements
         currentstate = GPIO.input(BR_MVT)
         # Si le capteur est déclenché
         if currentstate == 1 and previousstate == 0:
-            # GPIO.output(BR_BUZ, GPIO.HIGH)     # <--- Désactivation du buzzer
             print("    Mouvement détecté !")
-            socketio.emit('alert', False, Broadcast=True)
+            # Levée de doute temperature
+            message = "    Alerte annulée !"
+            if sensors["T"].temperatureC < 28:
+                mytime = time.localtime()
+                # Levée de doute éclairage (le jour uniquement)
+                if (mytime.tm_hour < 6 or mytime.tm_hour > 18) or sensors["L"].light < 100:
+                    # GPIO.output(BR_BUZ, GPIO.HIGH)     # <--- Désactivation du buzzer
+                    socketio.emit('alert', False, Broadcast=True)
+                    message = "    Alerte confirmée !"
+            print(message)
             # En enregistrer l'état
             previousstate = 1
         # Si le capteur s'est stabilisé
         elif currentstate == 0 and previousstate == 1:
-            # GPIO.output(BR_BUZ, GPIO.LOW)      # <--- Désactivation du buzzer
             print("    Prêt")
+            # GPIO.output(BR_BUZ, GPIO.LOW)      # <--- Désactivation du buzzer
             socketio.emit('alert', True, Broadcast=True)
             previousstate = 0
-        # On attends 10ms
-        time.sleep(0.01)
+        # On attends 500ms
+        time.sleep(0.5)
 
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 
 sondes = init_gpio()
+
+
+# Socket de lecture des messages en provenance du client
+@socketio.on('auth')
+def handle_message(message):
+    print("Code reçu de l'utilisateur: " + message['data'])
 
 
 # Thread qui va permettre à notre fonction de se lancer en parallèle du serveur.
